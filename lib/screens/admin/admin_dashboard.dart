@@ -10,6 +10,7 @@ import '../../models/job.dart';
 import '../../models/service.dart';
 import '../../models/gallery_item.dart';
 import '../../models/farming_post.dart';
+import '../../models/quiz_folder.dart';
 import '../../models/quiz_question.dart';
 import '../../utils/url_helper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -90,7 +91,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 3: return const ManageItems<VillageService>(collection: 'services', title: "Services");
       case 4: return const ManageItems<GalleryImage>(collection: 'gallery', title: "Photos");
       case 5: return const ManageItems<FarmingPost>(collection: 'farming', title: "Farming Content");
-      case 6: return const ManageItems<QuizQuestion>(collection: 'questions', title: "Quiz Questions");
+      case 6: return const ManageItems<QuizFolder>(collection: 'quiz_folders', title: "Quiz Sets");
       default: return const SizedBox();
     }
   }
@@ -111,7 +112,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             _statCard("Local Services", data.services.length, Icons.business, Colors.green),
             _statCard("Gallery Photos", data.galleryItems.length, Icons.photo_library, Colors.purple),
             _statCard("Farming Tips", data.farmingPosts.length, Icons.agriculture, Colors.brown),
-            _statCard("Quiz Questions", data.questions.length, Icons.quiz, Colors.teal),
+            _statCard("Quiz Sets", data.quizFolders.length, Icons.quiz, Colors.teal),
           ],
         ),
       ],
@@ -198,7 +199,7 @@ class ManageItems<T> extends StatelessWidget {
     if (item is VillageService) return Text(item.type.name.toUpperCase(), style: GoogleFonts.inter(fontSize: 11));
     if (item is GalleryImage) return Text("${item.category} • ${item.images.length} photos", style: GoogleFonts.inter(fontSize: 11));
     if (item is FarmingPost) return Text(item.category.name.toUpperCase(), style: GoogleFonts.inter(fontSize: 11));
-    if (item is QuizQuestion) return Text("${item.options.length} options • Answer: Option ${item.correctAnswerIndex + 1}", style: GoogleFonts.inter(fontSize: 11));
+    if (item is QuizFolder) return Text("${item.questions.length} questions", style: GoogleFonts.inter(fontSize: 11));
     return null;
   }
 
@@ -211,7 +212,7 @@ class ManageItems<T> extends StatelessWidget {
     else if (T == VillageService) items = data.services;
     else if (T == GalleryImage) items = data.galleryItems;
     else if (T == FarmingPost) items = data.farmingPosts;
-    else if (T == QuizQuestion) items = data.questions;
+    else if (T == QuizFolder) items = data.quizFolders;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +223,7 @@ class ManageItems<T> extends StatelessWidget {
             Text("Manage $title", style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold)),
             Row(
               children: [
-                if (T == QuizQuestion)
+                if (T == QuizFolder)
                   Padding(
                     padding: const EdgeInsets.only(right: 10.0),
                     child: ElevatedButton.icon(
@@ -250,7 +251,61 @@ class ManageItems<T> extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Expanded(
-          child: ListView.separated(
+          child: T == QuizFolder
+          ? GridView.builder(
+              padding: const EdgeInsets.only(top: 10),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 300,
+                childAspectRatio: 0.9,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, idx) {
+                final folder = items[idx] as QuizFolder;
+                return Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.quiz, size: 40, color: Color(0xFF2D5A27)),
+                              const SizedBox(height: 10),
+                              Text(folder.title, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+                              const SizedBox(height: 5),
+                              Text("${folder.questions.length} questions", style: GoogleFonts.inter(color: Colors.grey[600], fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20), 
+                              onPressed: () => _showAddDialog(context, item: folder),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), 
+                              onPressed: () => _showDeleteConfirmation(context, data, collection, folder.id, folder.title),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            )
+          : ListView.separated(
             itemCount: items.length,
             separatorBuilder: (_, __) => const Divider(),
             itemBuilder: (context, idx) {
@@ -261,7 +316,6 @@ class ManageItems<T> extends StatelessWidget {
               else if (item is VillageService) displayTitle = item.name;
               else if (item is GalleryImage) displayTitle = item.title;
               else if (item is FarmingPost) displayTitle = item.title;
-              else if (item is QuizQuestion) displayTitle = item.question;
 
               return ListTile(
                 leading: _buildLeading(item),
@@ -323,8 +377,8 @@ class ManageItems<T> extends StatelessWidget {
       _showGalleryDialog(context, item as GalleryImage?);
     } else if (T == FarmingPost) {
       _showFarmingDialog(context, item as FarmingPost?);
-    } else if (T == QuizQuestion) {
-      _showQuizDialog(context, item as QuizQuestion?);
+    } else if (T == QuizFolder) {
+      _showQuizDialog(context, item as QuizFolder?);
     }
   }
 
@@ -823,55 +877,45 @@ class ManageItems<T> extends StatelessWidget {
     );
   }
 
-  void _showQuizDialog(BuildContext context, QuizQuestion? question) {
-    final qController = TextEditingController(text: question?.question);
-    final optionsControllers = List.generate(
-      4, 
-      (i) => TextEditingController(text: (question?.options.length ?? 0) > i ? question!.options[i] : ""),
-    );
-    int correctIdx = question?.correctAnswerIndex ?? 0;
+  void _showQuizDialog(BuildContext context, QuizFolder? folder) {
+    final titleController = TextEditingController(text: folder?.title);
+    final descController = TextEditingController(text: folder?.description);
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(question == null ? "Add Question" : "Edit Question", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: qController, decoration: const InputDecoration(labelText: "Question"), maxLines: 2),
+      builder: (context) => AlertDialog(
+        title: Text(folder == null ? "Add Quiz Set" : "Edit Quiz Set", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: titleController, decoration: const InputDecoration(labelText: "Topic/Title")),
+              const SizedBox(height: 10),
+              TextField(controller: descController, decoration: const InputDecoration(labelText: "Description"), maxLines: 2),
+              if (folder != null) ...[
                 const SizedBox(height: 20),
-                ...List.generate(4, (i) => Row(
-                  children: [
-                    Radio<int>(
-                      value: i,
-                      groupValue: correctIdx,
-                      onChanged: (val) => setDialogState(() => correctIdx = val!),
-                    ),
-                    Expanded(child: TextField(controller: optionsControllers[i], decoration: InputDecoration(labelText: "Option ${i + 1}"))),
-                  ],
-                )),
-              ],
-            ),
+                Text("This folder has ${folder.questions.length} questions.", style: GoogleFonts.inter(color: Colors.grey[600], fontSize: 12)),
+              ]
+            ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-            ElevatedButton(
-              onPressed: () {
-                final newQ = QuizQuestion(
-                  id: question?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-                  question: qController.text,
-                  options: optionsControllers.map((c) => c.text).toList(),
-                  correctAnswerIndex: correctIdx,
-                );
-                context.read<DataProvider>().saveItem('questions', newQ.id, newQ.toMap());
-                Navigator.pop(context);
-              },
-              child: const Text("Save"),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () {
+              final newFolder = QuizFolder(
+                id: folder?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+                title: titleController.text,
+                description: descController.text,
+                createdAt: folder?.createdAt ?? DateTime.now().millisecondsSinceEpoch,
+                questions: folder?.questions ?? [],
+              );
+              context.read<DataProvider>().saveItem('quiz_folders', newFolder.id, newFolder.toMap());
+              Navigator.pop(context);
+            },
+            child: const Text("Save"),
+          ),
+        ],
       ),
     );
   }
@@ -920,30 +964,43 @@ class ManageItems<T> extends StatelessWidget {
                   if (topicController.text.trim().isEmpty) return;
                   
                   setDialogState(() => _isGenerating = true);
-                  try {
-                    final questionsData = await GroqService.generateQuiz(topicController.text);
-                    final dataProvider = context.read<DataProvider>();
-                    
-                    for (var qMap in questionsData) {
-                      final newQ = QuizQuestion(
-                        id: DateTime.now().microsecondsSinceEpoch.toString() + '_' + (questionsData.indexOf(qMap).toString()),
-                        question: qMap['question'] ?? '',
-                        options: List<String>.from(qMap['options'] ?? []),
-                        correctAnswerIndex: qMap['correctAnswerIndex'] ?? 0,
+                    try {
+                      final questionsData = await GroqService.generateQuiz(topicController.text);
+                      final dataProvider = context.read<DataProvider>();
+                      
+                      final String folderId = DateTime.now().millisecondsSinceEpoch.toString();
+                      
+                      List<QuizQuestion> parsedQuestions = [];
+                      for (var i = 0; i < questionsData.length; i++) {
+                        var qMap = questionsData[i];
+                        parsedQuestions.add(QuizQuestion(
+                          id: '${folderId}_$i',
+                          question: qMap['question'] ?? '',
+                          options: List<String>.from(qMap['options'] ?? []),
+                          correctAnswerIndex: qMap['correctAnswerIndex'] ?? 0,
+                        ));
+                      }
+                      
+                      final folder = QuizFolder(
+                        id: folderId,
+                        title: topicController.text,
+                        description: "AI Generated quiz on ${topicController.text}",
+                        createdAt: DateTime.now().millisecondsSinceEpoch,
+                        questions: parsedQuestions,
                       );
-                      await dataProvider.saveItem('questions', newQ.id, newQ.toMap());
+                      
+                      await dataProvider.saveItem('quiz_folders', folder.id, folder.toMap());
+                      
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Successfully generated a quiz folder with \${parsedQuestions.length} questions!")),
+                      );
+                    } catch (e) {
+                      setDialogState(() => _isGenerating = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+                      );
                     }
-                    
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Successfully generated and saved \${questionsData.length} AI questions!")),
-                    );
-                  } catch (e) {
-                    setDialogState(() => _isGenerating = false);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-                    );
-                  }
                 },
                 icon: const Icon(Icons.auto_awesome),
                 label: const Text("Generate"),

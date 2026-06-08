@@ -8,7 +8,7 @@ import '../models/job.dart';
 import '../models/service.dart';
 import '../models/gallery_item.dart';
 import '../models/farming_post.dart';
-import '../models/quiz_question.dart';
+import '../models/quiz_folder.dart';
 import '../data/mock_data.dart';
 
 class DataProvider extends ChangeNotifier {
@@ -20,7 +20,7 @@ class DataProvider extends ChangeNotifier {
   List<VillageService> _services = [];
   List<GalleryImage> _galleryItems = [];
   List<FarmingPost> _farmingPosts = [];
-  List<QuizQuestion> _questions = [];
+  List<QuizFolder> _quizFolders = [];
 
   DataProvider() {
     _initStreams();
@@ -32,7 +32,7 @@ class DataProvider extends ChangeNotifier {
   List<VillageService> get services => _services;
   List<GalleryImage> get galleryItems => _galleryItems;
   List<FarmingPost> get farmingPosts => _farmingPosts;
-  List<QuizQuestion> get questions => _questions;
+  List<QuizFolder> get quizFolders => _quizFolders;
 
   void _initStreams() {
     // Events Stream
@@ -66,8 +66,8 @@ class DataProvider extends ChangeNotifier {
     });
 
     // Quiz Stream
-    _db.collection('questions').snapshots().listen((snapshot) {
-      _questions = snapshot.docs.map((doc) => QuizQuestion.fromMap(doc.data())).toList();
+    _db.collection('quiz_folders').snapshots().listen((snapshot) {
+      _quizFolders = snapshot.docs.map((doc) => QuizFolder.fromMap(doc.data())).toList();
       notifyListeners();
     });
   }
