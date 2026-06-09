@@ -1,1 +1,2 @@
 - Activity log entry 1
+- Activity log entry 2
