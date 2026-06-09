@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // ignore: avoid_web_libraries_in_flutter
@@ -48,6 +49,10 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <!-- Leaflet Geocoder CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <!-- Leaflet Routing Machine CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { width: 100vw; height: 100vh; overflow: hidden; }
@@ -58,6 +63,11 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
 <body>
   <div id="map"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Leaflet Geocoder JS -->
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  <!-- Leaflet Routing Machine JS -->
+  <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+  
   <script>
     var map = L.map('map', { zoomControl: true }).setView([17.0287, 81.7749], 16);
 
@@ -65,6 +75,20 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
       attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       tileSize: 256,
       crossOrigin: true
+    }).addTo(map);
+
+    // Add Geocoder (Search)
+    L.Control.geocoder({
+      defaultMarkGeocode: false
+    }).on('markgeocode', function(e) {
+      var bbox = e.geocode.bbox;
+      var poly = L.polygon([
+        bbox.getSouthEast(),
+        bbox.getNorthEast(),
+        bbox.getNorthWest(),
+        bbox.getSouthWest()
+      ]).addTo(map);
+      map.fitBounds(poly.getBounds());
     }).addTo(map);
 
     var greenIcon = new L.Icon({
@@ -76,7 +100,57 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
       shadowSize: [41, 41]
     });
 
-    $markersJs
+    \$markersJs
+    
+    // User Location Tracking
+    var userLocation = null;
+    var userMarker = null;
+    var routingControl = null;
+
+    map.locate({setView: false, maxZoom: 16, watch: true});
+
+    map.on('locationfound', function(e) {
+      userLocation = e.latlng;
+      if (!userMarker) {
+        userMarker = L.marker(e.latlng).addTo(map).bindPopup("<b>You are here</b>");
+      } else {
+        userMarker.setLatLng(e.latlng);
+      }
+    });
+
+    map.on('locationerror', function(e) {
+      console.log("Location access denied or unavailable.");
+    });
+
+    // Listen for messages from Flutter to start routing
+    window.addEventListener("message", function(event) {
+      try {
+        var data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data && data.lat && data.lng) {
+          if (!userLocation) {
+            alert("We couldn't get your location yet. Please ensure location is enabled in your browser.");
+            return;
+          }
+          
+          var destination = L.latLng(data.lat, data.lng);
+        
+          if (routingControl) {
+            map.removeControl(routingControl);
+          }
+          
+          routingControl = L.Routing.control({
+            waypoints: [
+              userLocation,
+              destination
+            ],
+            routeWhileDragging: true,
+            show: false // hide the textual directions panel to keep UI clean
+          }).addTo(map);
+        }
+      } catch (e) {
+        console.log("Error parsing message: ", e);
+      }
+    });
   </script>
 </body>
 </html>
@@ -93,7 +167,8 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
           ..style.border = 'none'
           ..style.width = '100%'
           ..style.height = '100%'
-          ..allowFullscreen = true;
+          ..allowFullscreen = true
+          ..id = 'village-map-iframe';
         return iframe;
       },
     );
@@ -162,8 +237,16 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
                     onPressed: () {
                       final lat = place['lat'] as double;
                       final lng = place['lng'] as double;
-                      final url = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng';
-                      html.window.open(url, '_blank');
+                      
+                      final iframe = html.document.getElementById('village-map-iframe') as html.IFrameElement?;
+                      if (iframe != null && iframe.contentWindow != null) {
+                        iframe.contentWindow!.postMessage(jsonEncode({'lat': lat, 'lng': lng}), '*');
+                      } else {
+                        // Fallback if iframe is somehow not found
+                        final url = 'https://www.google.com/maps/dir/?api=1&destination=\$lat,\$lng';
+                        html.window.open(url, '_blank');
+                      }
+                      
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.directions),
