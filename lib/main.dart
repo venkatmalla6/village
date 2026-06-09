@@ -6,10 +6,12 @@ import 'package:provider/provider.dart';
 import 'main_layout.dart';
 import 'providers/auth_provider.dart';
 import 'providers/data_provider.dart';
+import 'providers/language_provider.dart';
 import 'screens/admin/login_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,11 +36,19 @@ Future<void> main() async {
     ),
   );
 
+  // Initialize Notifications safely
+  try {
+    await NotificationService.initialize();
+  } catch (e) {
+    print("Warning: Firebase Messaging failed to initialize: $e");
+  }
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DataProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: const SomarayanampetaApp(),
     ),

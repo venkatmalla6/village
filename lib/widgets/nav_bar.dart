@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:provider/provider.dart';
+import '../providers/language_provider.dart';
 class VillageNavBar extends StatelessWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final Function(int) onDestinationSelected;
@@ -34,16 +35,25 @@ class VillageNavBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: isDesktop
           ? [
-              _navButton("Home", 0),
-              _navButton("About", 1),
-              _navButton("Events", 2),
-              _navButton("Jobs", 3),
-              _navButton("Services", 4),
-              _navButton("Gallery", 5),
-              _navButton("Map", 6),
-              _navButton("Farming", 7),
-              _navButton("Quiz", 8),
+              _navButton("Home", 0, context),
+              _navButton("About", 1, context),
+              _navButton("Events", 2, context),
+              _navButton("Jobs", 3, context),
+              _navButton("Services", 4, context),
+              _navButton("Gallery", 5, context),
+              _navButton("Map", 6, context),
+              _navButton("Farming", 7, context),
+              _navButton("Quiz", 8, context),
+              _navButton("Marketplace", 9, context),
+              _navButton("Forum", 10, context),
               const SizedBox(width: 10),
+              IconButton(
+                icon: const Icon(Icons.language, color: Color(0xFF2D5A27)),
+                tooltip: "Toggle Language (English/Telugu)",
+                onPressed: () {
+                  context.read<LanguageProvider>().toggleLanguage();
+                },
+              ),
               IconButton(
                 onPressed: () => Navigator.pushNamed(context, '/admin/login'),
                 icon: const Icon(Icons.admin_panel_settings, color: Color(0xFF2D5A27)),
@@ -55,14 +65,15 @@ class VillageNavBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _navButton(String label, int index) {
+  Widget _navButton(String label, int index, BuildContext context) {
     bool isSelected = selectedIndex == index;
+    final tLabel = context.watch<LanguageProvider>().translate(label);
     return TextButton(
       onPressed: () => onDestinationSelected(index),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Text(
-          label,
+          tLabel,
           style: GoogleFonts.inter(
             color: isSelected ? const Color(0xFF2D5A27) : Colors.grey[700],
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -111,15 +122,26 @@ class VillageDrawer extends StatelessWidget {
               ],
             ),
           ),
-          _drawerItem(Icons.home, "Home", 0),
-          _drawerItem(Icons.info, "About", 1),
-          _drawerItem(Icons.event, "Events", 2),
-          _drawerItem(Icons.work, "Jobs", 3),
-          _drawerItem(Icons.home_repair_service, "Services", 4),
-          _drawerItem(Icons.photo_library, "Gallery", 5),
-          _drawerItem(Icons.map_outlined, "Village Map", 6),
-          _drawerItem(Icons.agriculture_outlined, "Farming", 7),
-          _drawerItem(Icons.quiz_outlined, "Quiz", 8),
+          _drawerItem(Icons.home, "Home", 0, context),
+          _drawerItem(Icons.info, "About", 1, context),
+          _drawerItem(Icons.event, "Events", 2, context),
+          _drawerItem(Icons.work, "Jobs", 3, context),
+          _drawerItem(Icons.home_repair_service, "Services", 4, context),
+          _drawerItem(Icons.photo_library, "Gallery", 5, context),
+          _drawerItem(Icons.map_outlined, "Map", 6, context),
+          _drawerItem(Icons.agriculture_outlined, "Farming", 7, context),
+          _drawerItem(Icons.quiz_outlined, "Quiz", 8, context),
+          _drawerItem(Icons.storefront, "Marketplace", 9, context),
+          _drawerItem(Icons.forum, "Forum", 10, context),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.language, color: Color(0xFF2D5A27)),
+            title: Text(context.watch<LanguageProvider>().translate("Language (English/Telugu)"), style: GoogleFonts.inter()),
+            onTap: () {
+              context.read<LanguageProvider>().toggleLanguage();
+              Navigator.pop(context);
+            },
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.admin_panel_settings, color: Color(0xFF2D5A27)),
@@ -134,11 +156,12 @@ class VillageDrawer extends StatelessWidget {
     );
   }
 
-  Widget _drawerItem(IconData icon, String label, int index) {
+  Widget _drawerItem(IconData icon, String label, int index, BuildContext context) {
     bool isSelected = selectedIndex == index;
+    final tLabel = context.watch<LanguageProvider>().translate(label);
     return ListTile(
       leading: Icon(icon, color: isSelected ? const Color(0xFF2D5A27) : null),
-      title: Text(label, style: GoogleFonts.inter(fontWeight: isSelected ? FontWeight.bold : null)),
+      title: Text(tLabel, style: GoogleFonts.inter(fontWeight: isSelected ? FontWeight.bold : null)),
       selected: isSelected,
       onTap: () {
         onDestinationSelected(index);

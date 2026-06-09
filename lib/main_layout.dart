@@ -9,7 +9,8 @@ import 'screens/gallery_screen.dart';
 import 'screens/village_map_screen.dart';
 import 'screens/farming_screen.dart';
 import 'screens/quiz_screen.dart';
-
+import 'screens/marketplace_screen.dart';
+import 'screens/forum_screen.dart';
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
 
@@ -30,6 +31,8 @@ class _MainLayoutState extends State<MainLayout> {
     const VillageMapScreen(),
     const FarmingScreen(),
     const QuizScreen(),
+    const MarketplaceScreen(),
+    const ForumScreen(),
   ];
 
   void _onDestinationSelected(int index) {
