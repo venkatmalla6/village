@@ -19,11 +19,11 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
   bool _isRegistered = false;
 
   final List<Map<String, dynamic>> _places = [
-    {'name': 'Somarayanampeta Center', 'lat': 17.0287, 'lng': 81.7749, 'type': 'Village', 'info': 'The heart of our peaceful village.', 'icon': Icons.location_city},
-    {'name': 'Village Primary School', 'lat': 17.0275, 'lng': 81.7740, 'type': 'School', 'info': 'Education for our bright future.', 'icon': Icons.school},
-    {'name': 'Community Health Center', 'lat': 17.0298, 'lng': 81.7760, 'type': 'Hospital', 'info': '24/7 care for all residents.', 'icon': Icons.medical_services},
-    {'name': 'Ravi Kirana Store', 'lat': 17.0305, 'lng': 81.7735, 'type': 'Shop', 'info': 'Fresh groceries and daily essentials.', 'icon': Icons.shopping_cart},
-    {'name': 'Farmer Coop Society', 'lat': 17.0260, 'lng': 81.7780, 'type': 'Business', 'info': 'Supporting local agricultural growth.', 'icon': Icons.agriculture},
+    {'name': 'Kotturu Center', 'lat': 17.181651, 'lng': 82.114733, 'type': 'Village', 'info': 'The heart of our peaceful village.', 'icon': Icons.location_city},
+    {'name': 'Village Primary School', 'lat': 17.180451, 'lng': 82.113833, 'type': 'School', 'info': 'Education for our bright future.', 'icon': Icons.school},
+    {'name': 'Community Health Center', 'lat': 17.182751, 'lng': 82.115833, 'type': 'Hospital', 'info': '24/7 care for all residents.', 'icon': Icons.medical_services},
+    {'name': 'Ravi Kirana Store', 'lat': 17.183451, 'lng': 82.113333, 'type': 'Shop', 'info': 'Fresh groceries and daily essentials.', 'icon': Icons.shopping_cart},
+    {'name': 'Farmer Coop Society', 'lat': 17.178951, 'lng': 82.117833, 'type': 'Business', 'info': 'Supporting local agricultural growth.', 'icon': Icons.agriculture},
   ];
 
   @override
@@ -69,7 +69,7 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
   <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
   
   <script>
-    var map = L.map('map', { zoomControl: true }).setView([17.0287, 81.7749], 16);
+    var map = L.map('map', { zoomControl: true }).setView([17.181651, 82.114733], 16);
 
     L.tileLayer('https://api.maptiler.com/maps/hybrid-v4/256/{z}/{x}/{y}.jpg?key=T78RzVQPMRleZnEmXgxC', {
       attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -106,7 +106,9 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
     var userLocation = null;
     var userMarker = null;
     var routingControl = null;
+    var pendingDestination = null;
 
+    // Try to get location silently in background
     map.locate({setView: false, maxZoom: 16, watch: true});
 
     map.on('locationfound', function(e) {
@@ -116,36 +118,52 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
       } else {
         userMarker.setLatLng(e.latlng);
       }
+      
+      // If the user clicked "Get Directions" and we were waiting for location, route now!
+      if (pendingDestination) {
+        startRouting(pendingDestination);
+        pendingDestination = null;
+      }
     });
 
     map.on('locationerror', function(e) {
       console.log("Location access denied or unavailable.");
+      if (pendingDestination) {
+        alert("Please allow location access in your browser to get directions!");
+        pendingDestination = null;
+      }
     });
+
+    function startRouting(destination) {
+      if (routingControl) {
+        map.removeControl(routingControl);
+      }
+      
+      routingControl = L.Routing.control({
+        waypoints: [
+          userLocation,
+          destination
+        ],
+        routeWhileDragging: true,
+        show: false
+      }).addTo(map);
+    }
 
     // Listen for messages from Flutter to start routing
     window.addEventListener("message", function(event) {
       try {
         var data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         if (data && data.lat && data.lng) {
-          if (!userLocation) {
-            alert("We couldn't get your location yet. Please ensure location is enabled in your browser.");
-            return;
-          }
-          
           var destination = L.latLng(data.lat, data.lng);
-        
-          if (routingControl) {
-            map.removeControl(routingControl);
-          }
           
-          routingControl = L.Routing.control({
-            waypoints: [
-              userLocation,
-              destination
-            ],
-            routeWhileDragging: true,
-            show: false // hide the textual directions panel to keep UI clean
-          }).addTo(map);
+          if (!userLocation) {
+            // We don't have location yet. Save destination and ask for location!
+            pendingDestination = destination;
+            map.locate({setView: true, maxZoom: 16});
+          } else {
+            // We already have location, start routing immediately
+            startRouting(destination);
+          }
         }
       } catch (e) {
         console.log("Error parsing message: ", e);
@@ -176,6 +194,11 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
 
   void _showPlaceDetails(Map<String, dynamic> place) {
     setState(() => _isBottomSheetOpen = true);
+    
+    // Disable iframe pointer events to prevent it from stealing touches from the bottom sheet
+    final iframe = html.document.getElementById('village-map-iframe') as html.IFrameElement?;
+    if (iframe != null) iframe.style.pointerEvents = 'none';
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -266,7 +289,11 @@ class _VillageMapScreenState extends State<VillageMapScreen> {
         ),
       ),
     ).whenComplete(() {
-      if (mounted) setState(() => _isBottomSheetOpen = false);
+      if (mounted) {
+        setState(() => _isBottomSheetOpen = false);
+        final iframe = html.document.getElementById('village-map-iframe') as html.IFrameElement?;
+        if (iframe != null) iframe.style.pointerEvents = 'auto';
+      }
     });
   }
 

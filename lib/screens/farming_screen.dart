@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/data_provider.dart';
 import '../models/farming_post.dart';
+import '../widgets/weather_widget.dart';
 
 class FarmingScreen extends StatefulWidget {
   const FarmingScreen({super.key});
@@ -42,7 +43,9 @@ class _FarmingScreenState extends State<FarmingScreen> {
                 _buildCategoryFilter(),
               ],
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
+            const WeatherWidget(),
+            const SizedBox(height: 20),
             posts.isEmpty 
               ? _buildEmptyState()
               : GridView.builder(
