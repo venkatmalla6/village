@@ -82,7 +82,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                '\${_weatherData!.temperature.toStringAsFixed(1)}°C',
+                '${_weatherData!.temperature.toStringAsFixed(1)}°C',
                 style: GoogleFonts.outfit(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
@@ -125,7 +125,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    '\${_weatherData!.dailyMinTemp[index].round()}° / \${_weatherData!.dailyMaxTemp[index].round()}°',
+                    '${_weatherData!.dailyMinTemp[index].round()}° / ${_weatherData!.dailyMaxTemp[index].round()}°',
                     style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[700]),
                   ),
                   const SizedBox(height: 5),
@@ -133,7 +133,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                     children: [
                       const Icon(Icons.water_drop, size: 12, color: Colors.blue),
                       Text(
-                        '\${_weatherData!.dailyPrecipitation[index]}mm',
+                        '${_weatherData!.dailyPrecipitation[index]}mm',
                         style: GoogleFonts.inter(fontSize: 12, color: Colors.blue[700]),
                       ),
                     ],

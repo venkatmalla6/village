@@ -6,7 +6,6 @@ import 'screens/events_screen.dart';
 import 'screens/jobs_screen.dart';
 import 'screens/services_screen.dart';
 import 'screens/gallery_screen.dart';
-import 'screens/village_map_screen.dart';
 import 'screens/farming_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/marketplace_screen.dart';
@@ -28,7 +27,6 @@ class _MainLayoutState extends State<MainLayout> {
     const JobsScreen(),
     const ServicesScreen(),
     const GalleryScreen(),
-    const VillageMapScreen(),
     const FarmingScreen(),
     const QuizScreen(),
     const MarketplaceScreen(),

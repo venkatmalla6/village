@@ -31,37 +31,49 @@ class VillageNavBar extends StatelessWidget implements PreferredSizeWidget {
               fontSize: 24,
             ),
           ),
+          if (isDesktop) ...[
+            const Spacer(),
+            Expanded(
+              flex: 10,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _navButton("Home", 0, context),
+                      _navButton("About", 1, context),
+                      _navButton("Events", 2, context),
+                      _navButton("Jobs", 3, context),
+                      _navButton("Services", 4, context),
+                      _navButton("Gallery", 5, context),
+                      _navButton("Farming", 6, context),
+                      _navButton("Quiz", 7, context),
+                      _navButton("Marketplace", 8, context),
+                      _navButton("Forum", 9, context),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            IconButton(
+              icon: const Icon(Icons.language, color: Color(0xFF2D5A27)),
+              tooltip: "Toggle Language (English/Telugu)",
+              onPressed: () {
+                context.read<LanguageProvider>().toggleLanguage();
+              },
+            ),
+            IconButton(
+              onPressed: () => Navigator.pushNamed(context, '/admin/login'),
+              icon: const Icon(Icons.admin_panel_settings, color: Color(0xFF2D5A27)),
+              tooltip: "Admin Portal",
+            ),
+          ],
         ],
       ),
-      actions: isDesktop
-          ? [
-              _navButton("Home", 0, context),
-              _navButton("About", 1, context),
-              _navButton("Events", 2, context),
-              _navButton("Jobs", 3, context),
-              _navButton("Services", 4, context),
-              _navButton("Gallery", 5, context),
-              _navButton("Map", 6, context),
-              _navButton("Farming", 7, context),
-              _navButton("Quiz", 8, context),
-              _navButton("Marketplace", 9, context),
-              _navButton("Forum", 10, context),
-              const SizedBox(width: 10),
-              IconButton(
-                icon: const Icon(Icons.language, color: Color(0xFF2D5A27)),
-                tooltip: "Toggle Language (English/Telugu)",
-                onPressed: () {
-                  context.read<LanguageProvider>().toggleLanguage();
-                },
-              ),
-              IconButton(
-                onPressed: () => Navigator.pushNamed(context, '/admin/login'),
-                icon: const Icon(Icons.admin_panel_settings, color: Color(0xFF2D5A27)),
-                tooltip: "Admin Portal",
-              ),
-              const SizedBox(width: 20),
-            ]
-          : null,
+      actions: isDesktop ? [const SizedBox(width: 16)] : null,
     );
   }
 
@@ -128,11 +140,10 @@ class VillageDrawer extends StatelessWidget {
           _drawerItem(Icons.work, "Jobs", 3, context),
           _drawerItem(Icons.home_repair_service, "Services", 4, context),
           _drawerItem(Icons.photo_library, "Gallery", 5, context),
-          _drawerItem(Icons.map_outlined, "Map", 6, context),
-          _drawerItem(Icons.agriculture_outlined, "Farming", 7, context),
-          _drawerItem(Icons.quiz_outlined, "Quiz", 8, context),
-          _drawerItem(Icons.storefront, "Marketplace", 9, context),
-          _drawerItem(Icons.forum, "Forum", 10, context),
+          _drawerItem(Icons.agriculture_outlined, "Farming", 6, context),
+          _drawerItem(Icons.quiz_outlined, "Quiz", 7, context),
+          _drawerItem(Icons.storefront, "Marketplace", 8, context),
+          _drawerItem(Icons.forum, "Forum", 9, context),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.language, color: Color(0xFF2D5A27)),
